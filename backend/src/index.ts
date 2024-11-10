@@ -1,11 +1,15 @@
 import express from "express";
-import { client } from "./core/db";
+import { client, initalizeSeating } from "./core/db";
+import cors from "cors";
+import bodyParser from "body-parser";
+
 const app = express();
 
+app.use(cors(), bodyParser.json());
+
 app.get("/", async (req, res) => {
-  const command = await client.db("admin").command({ ping: 1 });
-  console.log(command);
-  res.send("ufa kefe");
+  const seats = initalizeSeating();
+  res.json(seats);
 });
 
 app.listen(process.env.PORT, () => {
