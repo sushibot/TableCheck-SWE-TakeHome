@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Seats } from "./types";
-import { fetchInialSeats } from "./api";
+import { fetchInialSeats, addToWaitlist } from "./api";
 
 export const useInitialSeats = () => {
   const [seats, setSeats] = useState<Seats | null>(null);
@@ -28,4 +28,11 @@ export const useInitialSeats = () => {
     };
   }, []);
   return { seats, error, loading };
+};
+
+export const useWaitlist = () => {
+  useEffect(() => {
+    addToWaitlist();
+  }, []);
+  return "added to waitlist";
 };

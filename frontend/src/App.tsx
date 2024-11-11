@@ -1,12 +1,11 @@
-import { useEffect } from "react";
 import { useInitialSeats } from "./hooks";
+import { addToWaitlist } from "./api";
 
 import "./App.css";
 
 function App() {
   const { seats } = useInitialSeats();
 
-  useEffect(() => {}, []);
   return (
     <>
       <div>
@@ -15,6 +14,7 @@ function App() {
             <h1>Seats</h1>
 
             <p>{seats.available}</p>
+            <button onClick={addToWaitlist}>Waitlist</button>
           </div>
         ) : (
           <p>Error fetching all seats</p>
