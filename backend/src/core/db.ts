@@ -7,6 +7,23 @@ export const initalizeSeating = () => {
 
   return { available: MAX_WAITLIST_SIZE };
 };
+
+export const addToWaitlist = () => {
+  // 1.
+  // retrieve part name, party size
+  // __________________________________________________________________________________________
+  // 2.
+  // create new document
+  // store document
+  // __________________________________________________________________________________________
+  // 3.
+  // create websocket connection
+  // add client to subscription list
+  // __________________________________________________________________________________________
+  // 4.
+  // return estimated wait time, confirmation ID, timestamp of joining, waitlist position number
+  // maybe also include: total number of people ahead, party details, status,
+};
 process.on("SIGTERM", async () => {
   await client.close(); // closes connection to MongoDB
 });
