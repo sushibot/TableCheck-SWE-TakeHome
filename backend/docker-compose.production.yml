@@ -3,7 +3,7 @@ services:
   build:
     context: .
   environment:
-    DB_URL: mongodb://root:example@db:27017/?authSource=admin
+    DB_URL: mongodb://root:myS3cureP4ssword!@db:27017/?authSource=admin
     NODE_ENV: production
   ports:
     - 3000:3000
