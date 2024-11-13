@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const Waitlist = z.object({
-  party: z.number(),
+  party: z.array(z.string()),
   name: z.string(),
   size: z.number(),
 });
