@@ -1,25 +1,28 @@
-import { useInitialSeats } from "./hooks";
-import { addToWaitlist } from "./api";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { httpBatchLink } from "@trpc/client";
+import { client } from "./utils/trpc";
+import Home from "./pages/home";
 import "./App.css";
 
 function App() {
-  const { seats } = useInitialSeats();
+  const queryClient = new QueryClient();
+  const trpcClient = () =>
+    client.createClient({
+      links: [
+        httpBatchLink({
+          url: import.meta.env.VITE_API_URL,
+          // You can pass any HTTP headers you wish here
+        }),
+      ],
+    });
 
   return (
     <>
-      <div>
-        {seats ? (
-          <div>
-            <h1>Seats</h1>
-
-            <p>{seats.available}</p>
-            <button onClick={addToWaitlist}>Waitlist</button>
-          </div>
-        ) : (
-          <p>Error fetching all seats</p>
-        )}
-      </div>
+      <client.Provider client={trpcClient()} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <Home />
+        </QueryClientProvider>
+      </client.Provider>
     </>
   );
 }
