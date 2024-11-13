@@ -8,11 +8,11 @@ function Home() {
 
   const handleClick = async () => {
     const options: WaitlistInput = {
-      name: "Gabe",
-      party: ["Foo", "Bar", "Baz"],
-      size: 3,
+      name: "Rachel",
+      party: ["Foo", "Bar", "Baz", "Biz"],
+      size: 4,
     };
-    waitlistMutation.mutate(options);
+    const waitlist = await waitlistMutation.mutate(options);
   };
   return (
     <>
