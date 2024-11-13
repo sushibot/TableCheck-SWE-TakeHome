@@ -1,21 +1,57 @@
 import { MongoClient } from "mongodb";
+import { Waitlist } from "../schema";
 
-export const client = new MongoClient(process.env.DB_URL); // creates connection to MongoDB
-
+const client = new MongoClient(process.env.DB_URL); // creates connection to MongoDB
 export const initalizeSeating = () => {
   const MAX_WAITLIST_SIZE = 10;
 
   return { available: MAX_WAITLIST_SIZE };
 };
 
+export const waitlist = {
+  add: async (waitlist: Waitlist) => {
+    try {
+      const result = await client.db().collection("waitlist").insertOne({
+        name: waitlist.name,
+        party: waitlist.party,
+        size: waitlist.size,
+        timestamp: Date.now(),
+      });
+
+      return "inserted new waitlist into DB";
+    } catch (error) {
+    } finally {
+      await client.close();
+    }
+  },
+};
+export const listCollections = async () => {
+  try {
+    await client.connect();
+    console.log("listing all connections: \n");
+    const collections = await client.db().collections();
+    console.log(collections);
+    return collections;
+  } catch (error) {
+  } finally {
+    await client.close();
+  }
+  // const ping = await client.db().admin().ping();
+};
+
+export const collections = {
+  list: async () => {},
+};
+export const databases = {
+  list: async () => {
+    try {
+      await client.connect();
+      return await client.db().admin().listDatabases();
+    } catch (error) {}
+  },
+};
+
 export const addToWaitlist = () => {
-  // 1.
-  // retrieve part name, party size
-  // __________________________________________________________________________________________
-  // 2.
-  // create new document
-  // store document
-  // __________________________________________________________________________________________
   // 3.
   // create websocket connection
   // add client to subscription list
