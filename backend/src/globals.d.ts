@@ -3,5 +3,6 @@ namespace NodeJS {
     PORT: string;
     DB_URL: string;
     TRPC_ENDPOINT: string;
+    ENDPOINT: string;
   }
 }
