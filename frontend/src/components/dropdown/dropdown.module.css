@@ -1,0 +1,46 @@
+.container {
+  padding: 1rem;
+  border: 0.5px solid var(--text-primary-color);
+  border-radius: 2px;
+  position: relative;
+}
+.selectedOptionContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+
+  .selectedOptionText {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}
+
+.list {
+  border-radius: 2px;
+  list-style-type: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+
+  margin-left: 0;
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+  background-color: var(--background-color-mute);
+
+  .listItem {
+    background-color: transparent;
+    transition: background-color 0.25s;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .listItem:hover {
+    cursor: pointer;
+    background-color: var(--background-color-light);
+  }
+}
