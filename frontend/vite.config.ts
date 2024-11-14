@@ -6,10 +6,15 @@ export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
     plugins: [react()],
+    css: {
+      modules: {
+        localsConvention: "camelCase",
+      },
+    },
     server: {
       proxy: {
         "/api": {
-          target: env.VITE_API_URL, // Backend server URL
+          target: env.VITE_TRPC_API_URL, // Backend server URL
           changeOrgin: true,
           rewrite: (path) => path.replace(/^\/api/, ""), // Remove "/api" prefix
         },
