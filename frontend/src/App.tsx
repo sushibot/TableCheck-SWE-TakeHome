@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
+import { URL } from "./config";
 import { client } from "./utils/trpc";
-import Home from "./pages/home";
+import { Home } from "./pages/home";
 import "./App.css";
 
 function App() {
@@ -10,7 +11,7 @@ function App() {
     client.createClient({
       links: [
         httpBatchLink({
-          url: import.meta.env.VITE_API_URL,
+          url: URL,
           // You can pass any HTTP headers you wish here
         }),
       ],
