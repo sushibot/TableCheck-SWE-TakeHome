@@ -11,14 +11,17 @@ export const initalizeSeating = () => {
 export const waitlist = {
   add: async (waitlist: Waitlist) => {
     try {
+      await client.connect();
       const result = await client.db().collection("waitlist").insertOne({
-        name: waitlist.name,
-        party: waitlist.party,
+        partyName: waitlist.partyName,
         size: waitlist.size,
         timestamp: Date.now(),
       });
 
-      return "inserted new waitlist into DB";
+      // 4.
+      // return estimated wait time, confirmation ID, timestamp of joining, waitlist position number
+      // maybe also include: total number of people ahead, party details, status,
+      return result;
     } catch (error) {
     } finally {
       await client.close();
@@ -51,15 +54,6 @@ export const databases = {
   },
 };
 
-export const addToWaitlist = () => {
-  // 3.
-  // create websocket connection
-  // add client to subscription list
-  // __________________________________________________________________________________________
-  // 4.
-  // return estimated wait time, confirmation ID, timestamp of joining, waitlist position number
-  // maybe also include: total number of people ahead, party details, status,
-};
 process.on("SIGTERM", async () => {
   await client.close(); // closes connection to MongoDB
 });
