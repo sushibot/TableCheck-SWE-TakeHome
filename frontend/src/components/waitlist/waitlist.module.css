@@ -1,0 +1,32 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+  padding: 1.5rem;
+  border: 1px solid var(--text-primary-color);
+}
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.waitlistForm {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  .inputContainer {
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 0.5px solid var(--text-primary-color);
+    border-radius: 2px;
+    display: flex;
+
+    .label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+  }
+}
