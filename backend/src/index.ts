@@ -45,6 +45,7 @@ app.get(`${process.env.ENDPOINT}/waitlist-queue`, (req, res) => {
   });
 
   req.on("close", () => {
+    console.log("closing connection.. ");
     unsubscribe();
   });
 });
