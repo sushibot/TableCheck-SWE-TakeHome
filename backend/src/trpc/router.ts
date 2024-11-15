@@ -22,12 +22,13 @@ export const appRouter = router({
         const party = options.input;
         try {
           const added = await waitlist.add(party);
-          console.log({ data: added, line: "router.ts 22" });
+
           if (added) {
             enqueue({
               partyName: party.partyName,
               id: added?.insertedId.toString(),
               size: party.size,
+              timestamp: Date.now(),
             });
           }
           console.log({ queue: status() });
