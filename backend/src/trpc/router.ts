@@ -1,5 +1,5 @@
 import { WaitlistInput, WaitlistOutput } from "../schema";
-import { waitlistQueue } from "../core/queue";
+import { enqueue, status } from "../core/queue";
 import {
   initalizeSeating,
   listCollections,
@@ -24,13 +24,13 @@ export const appRouter = router({
           const added = await waitlist.add(party);
           console.log({ data: added, line: "router.ts 22" });
           if (added) {
-            waitlistQueue.enqueue({
+            enqueue({
               partyName: party.partyName,
               id: added?.insertedId.toString(),
               size: party.size,
             });
           }
-          console.log({ queue: waitlistQueue.getStatus() });
+          console.log({ queue: status() });
 
           return {
             success: true,

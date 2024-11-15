@@ -7,7 +7,7 @@ import * as trpcExpress from "@trpc/server/adapters/express";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/trpc";
 
-import { waitlistQueue } from "./core/queue";
+import { status, subscribe } from "./core/queue";
 const app = express();
 
 app.use(cors(), bodyParser.json());
@@ -31,16 +31,14 @@ app.get(`${process.env.ENDPOINT}/waitlist-queue`, (req, res) => {
   });
   console.log("Connected to queue.....");
 
-  const status = waitlistQueue.getStatus();
-
   res.write(
     `data: ${JSON.stringify({
       type: "Initial State",
-      data: status,
+      data: status(),
     })}\n\n`
   );
 
-  const unsubscribe = waitlistQueue.subscribe((event) => {
+  const unsubscribe = subscribe((event) => {
     if (!res.closed) {
       res.write(`data: ${JSON.stringify(event)}\n\n`);
     }
