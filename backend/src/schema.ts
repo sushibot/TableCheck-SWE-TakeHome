@@ -11,10 +11,15 @@ export const WaitlistOutput = z.object({
 });
 export type Waitlist = z.infer<typeof WaitlistInput>;
 
-export interface Queue {
+export interface Party {
   id: string;
   partyName: string;
   size: number;
+  timestamp: number;
 }
 
 export type QueueEvents = "enqueued" | "dequeued";
+export interface Seats {
+  maxSeats: number;
+  availableSeats: number;
+}

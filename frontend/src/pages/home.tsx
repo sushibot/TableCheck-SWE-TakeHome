@@ -11,7 +11,7 @@ export function Home() {
         {seatsQuery ? (
           <div>
             <h1>Seats</h1>
-            <p>{JSON.stringify(seatsQuery.data?.available)}</p>
+            <p>{JSON.stringify(seatsQuery.data?.availableSeats)}</p>
           </div>
         ) : (
           <p>Error fetching all seats</p>
