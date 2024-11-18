@@ -1,15 +1,27 @@
 import { z } from "zod";
 
-export const WaitlistInput = z.object({
-  partyName: z.string(),
-  size: z.number(),
-});
+export const Waitlist = {
+  input: {
+    add: z.object({
+      partyName: z.string(),
+      size: z.number(),
+    }),
+  },
+  output: {
+    add: z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+  },
+};
 
-export const WaitlistOutput = z.object({
-  success: z.boolean(),
-  message: z.string(),
-});
-export type Waitlist = z.infer<typeof WaitlistInput>;
+export const Seats = {
+  output: {
+    available: z.number(),
+  },
+};
+
+export type Waitlist = z.infer<typeof Waitlist.input.add>;
 
 export interface Party {
   id: string;
