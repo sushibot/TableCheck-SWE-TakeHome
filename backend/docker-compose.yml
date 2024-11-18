@@ -9,6 +9,14 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: myS3cureP4ssword!
+  queue:
+    image: redis/redis-stack-server:latest
+    restart: unless-stopped
+    volumes:
+      - queue-data:/data/queue
+    ports:
+      - 6379:6379
 
 volumes:
   db-data:
+  queue-data:
