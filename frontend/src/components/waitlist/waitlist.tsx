@@ -15,13 +15,17 @@ export function Waitlist() {
   const [retryCount, setRetryCount] = useState(0);
   const [shouldConnect, setShouldConnect] = useState(false);
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
-  const [buttonText, setButtonText] = useState("Waitlist");
 
   const setupEventSource = useCallback(() => {
     const events = new EventSource(
       `${import.meta.env.VITE_API_URL}/waitlist-queue`
     );
-
+    events.addEventListener("open", (event) => {
+      console.log("Connected to SSE!");
+      console.log(event);
+      setIsConnected(true);
+      setRetryCount(0);
+    });
     events.onopen = () => {
       console.log("Connected to SSE");
       setIsConnected(true);
@@ -87,6 +91,7 @@ export function Waitlist() {
 
   useEffect(() => {
     if (!shouldConnect) {
+      // closes connection with server
       if (eventSource) {
         console.log("Closing exisiting SSE connection");
         eventSource.close();
@@ -96,6 +101,7 @@ export function Waitlist() {
     }
 
     const newEventSource = setupEventSource();
+
     if (newEventSource) {
       setEventSource(newEventSource);
     }
@@ -108,15 +114,18 @@ export function Waitlist() {
     };
   }, [shouldConnect, setupEventSource]);
 
-  const resetForm = () => {
-    if (formElement.current) {
-      const form = formElement.current;
-      setPartySize(null);
-      form.reset();
-    }
-  };
-  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isConnected) {
+    }
+    addToWaitlist(event);
+  };
+
+  const handleDropdownChange = (option: number) => {
+    setPartySize(option);
+  };
+
+  const addToWaitlist = async (event: FormEvent<HTMLFormElement>) => {
     const form: HTMLFormElement = event.currentTarget;
     const data = new FormData(form);
     const partyName = data.get("partyName") as string;
@@ -131,8 +140,8 @@ export function Waitlist() {
       await waitlistMutation.mutate(options, {
         onSuccess: (data) => {
           console.log(data, "\n\n");
+          setIsConnected(true);
           setShouldConnect(true);
-          setButtonText("Leave Waitlist");
           resetForm();
         },
         onError: (error) => {
@@ -142,8 +151,12 @@ export function Waitlist() {
     }
   };
 
-  const handleDropdownChange = (option: number) => {
-    setPartySize(option);
+  const resetForm = () => {
+    if (formElement.current) {
+      const form = formElement.current;
+      setPartySize(null);
+      form.reset();
+    }
   };
   return (
     <>
@@ -166,8 +179,13 @@ export function Waitlist() {
           </label>
           <Dropdown onChange={handleDropdownChange} options={options} />
 
-          <button type="submit">{buttonText}</button>
+          <button type="submit">
+            {isConnected ? "Leave Waitlist" : "Waitlist"}
+          </button>
         </form>
+        {/* <button type="button" onClick={() => setShouldConnect(false)}>
+          Close Connection Test
+        </button> */}
       </div>
     </>
   );
