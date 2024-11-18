@@ -1,17 +1,68 @@
 import { MongoClient } from "mongodb";
-import { Waitlist } from "../schema";
+import { Waitlist, Seats } from "../schema";
+import { DINER, type Diner } from "./diner";
 
-const client = new MongoClient(process.env.DB_URL); // creates connection to MongoDB
-export const initalizeSeating = () => {
-  const MAX_WAITLIST_SIZE = 10;
+const clientConnect = async () => {
+  let client: MongoClient | null = null;
+  if (!client) {
+    try {
+      client = new MongoClient(process.env.DB_URL); // creates connection to MongoDB
+      await client.connect();
+    } catch (error) {
+      console.log(error);
+      throw new Error();
+    }
+  }
+  return client;
+};
 
-  return { available: MAX_WAITLIST_SIZE };
+const client = await clientConnect();
+
+export const seats = {
+  initalize: async () => {
+    const PARTY_NAME = "Jon Snow";
+
+    try {
+      const results = await client
+        .db()
+        .collection("diner")
+        .replaceOne(
+          { partyName: PARTY_NAME },
+          {
+            partyName: PARTY_NAME,
+            size: DINER.MAX_SEATS,
+            timestamp: Date.now(),
+            expiresAt: Date.now() + 5000, // for now
+          },
+          { upsert: true }
+        );
+      console.log("Successfully initalized the Diner.");
+      return results;
+    } catch (error) {
+      console.error("Error in initialize: ", error);
+      throw error;
+    }
+  },
+  available: async (): Promise<number> => {
+    try {
+      const diners = await client
+        .db()
+        .collection<Diner>("diner")
+        .find({})
+        .toArray();
+      const result = diners.reduce((sum, diner) => sum + diner.size, 0);
+
+      return result;
+    } catch (error) {
+      console.log("Error retrieving available seats: ", error);
+      throw error;
+    }
+  },
 };
 
 export const waitlist = {
   add: async (waitlist: Waitlist) => {
     try {
-      await client.connect();
       const result = await client.db().collection("waitlist").insertOne({
         partyName: waitlist.partyName,
         size: waitlist.size,
@@ -22,34 +73,6 @@ export const waitlist = {
       // return estimated wait time, confirmation ID, timestamp of joining, waitlist position number
       // maybe also include: total number of people ahead, party details, status,
       return result;
-    } catch (error) {
-    } finally {
-      await client.close();
-    }
-  },
-};
-export const listCollections = async () => {
-  try {
-    await client.connect();
-    console.log("listing all connections: \n");
-    const collections = await client.db().collections();
-    console.log(collections);
-    return collections;
-  } catch (error) {
-  } finally {
-    await client.close();
-  }
-  // const ping = await client.db().admin().ping();
-};
-
-export const collections = {
-  list: async () => {},
-};
-export const databases = {
-  list: async () => {
-    try {
-      await client.connect();
-      return await client.db().admin().listDatabases();
     } catch (error) {}
   },
 };
