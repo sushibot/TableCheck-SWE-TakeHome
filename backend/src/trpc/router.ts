@@ -1,38 +1,33 @@
-import { WaitlistInput, WaitlistOutput } from "../schema";
-import { enqueue, status } from "../core/queue";
-import {
-  initalizeSeating,
-  listCollections,
-  waitlist,
-  databases,
-} from "../core/db";
+import { Waitlist, Seats } from "../schema";
+import { jobs, JobData, workers } from "../core/queue/index";
+import { seats, waitlist } from "../core/db";
 import { publicProcedure, router } from "./trpc";
 import type { inferRouterInputs } from "@trpc/server";
 
 export const appRouter = router({
-  seats: publicProcedure.query(() => {
-    return initalizeSeating();
-  }),
+  brain: publicProcedure.mutation(async (options) => {}),
+  seats: {
+    initalize: publicProcedure.mutation(() => {
+      return seats.initalize();
+    }),
+    available: publicProcedure.output(Seats.output.available).query(() => {
+      return seats.available();
+    }),
+  },
   waitlist: {
     get: publicProcedure.query(() => "hi from tRPC waitlist"),
     add: publicProcedure
-      .output(WaitlistOutput)
-      .input(WaitlistInput)
+      .output(Waitlist.output.add)
+      .input(Waitlist.input.add)
       .mutation(async (options) => {
         const party = options.input;
         try {
-          const added = await waitlist.add(party);
-
-          if (added) {
-            enqueue({
-              partyName: party.partyName,
-              id: added?.insertedId.toString(),
-              size: party.size,
-              timestamp: Date.now(),
-            });
-          }
-          console.log({ queue: status() });
-
+          await waitlist.add(party);
+          await jobs.waitlist.add({
+            partyName: party.partyName,
+            size: party.size,
+            timestamp: Date.now(),
+          });
           return {
             success: true,
             message: `${party.partyName} successfully added to queue`,
@@ -48,17 +43,13 @@ export const appRouter = router({
         // return timestamp, queue priority, estimated wait time
       }),
 
-    queue: publicProcedure.input(WaitlistInput).query((options) => {
+    queue: publicProcedure.input(Waitlist.input.add).query((options) => {
       const name = options.input.partyName;
       return `${name} has joined the waitlist queue.`;
     }),
+    stream: publicProcedure.query(() => {}),
   },
-  collections: {
-    get: publicProcedure.query(() => listCollections()),
-  },
-  databases: {
-    getAll: publicProcedure.query(() => databases.list()),
-  },
+  queue: {},
 });
 
 export type AppRouter = typeof appRouter;
