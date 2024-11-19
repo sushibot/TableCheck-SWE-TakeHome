@@ -1,11 +1,41 @@
-import { Waitlist, Seats } from "../schema";
+import { Waitlist, Seats, id } from "../schema";
 import { jobs, JobData, workers } from "../core/queue/index";
-import { seats, waitlist } from "../core/db";
+import { seats, waitlist, party } from "../core/db";
 import { publicProcedure, router } from "./trpc";
 import type { inferRouterInputs } from "@trpc/server";
 
 export const appRouter = router({
-  brain: publicProcedure.mutation(async (options) => {}),
+  checkIn: publicProcedure.input(Waitlist.input.add).mutation((option) => {
+    const party = option.input;
+  }),
+  brain: publicProcedure.input(id).mutation(async (options) => {
+    const seatsAvailable = await seats.available();
+    const nextParty = await party.get(options.input.id);
+
+    if (nextParty) {
+      if (nextParty?.size < seatsAvailable) {
+        return {
+          checkIn: true,
+          message: "Please check in to your reservation.",
+        };
+      } else {
+        return {
+          checkIn: false,
+          message: "Please wait until enough seats are available.",
+        };
+      }
+    }
+    return {
+      checkIn: false,
+      message: "Could not find party.",
+    };
+  }),
+  party: {
+    get: publicProcedure.input(id).query(async (options) => {
+      const results = await party.get(options.input.id);
+      return results;
+    }),
+  },
   seats: {
     initalize: publicProcedure.mutation(() => {
       return seats.initalize();

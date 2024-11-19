@@ -8,6 +8,7 @@ import { Dropdown } from "../dropdown/dropdown";
 export function Waitlist() {
   const formElement = useRef<HTMLFormElement | null>(null);
   const waitlistMutation = client.waitlist.add.useMutation();
+  const brainMutation = client.brain.useMutation();
 
   const [options] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const [partySize, setPartySize] = useState<number | null>(null);
@@ -125,6 +126,9 @@ export function Waitlist() {
     setPartySize(option);
   };
 
+  const handleCheckIn = () => {
+    // const partyGetQuery = client.party.get.useQuery();
+  };
   const addToWaitlist = async (event: FormEvent<HTMLFormElement>) => {
     const form: HTMLFormElement = event.currentTarget;
     const data = new FormData(form);
@@ -183,9 +187,9 @@ export function Waitlist() {
             {isConnected ? "Leave Waitlist" : "Waitlist"}
           </button>
         </form>
-        {/* <button type="button" onClick={() => setShouldConnect(false)}>
+        <button type="button" onClick={() => setShouldConnect(false)}>
           Close Connection Test
-        </button> */}
+        </button>
       </div>
     </>
   );
