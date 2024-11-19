@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ObjectId } from "mongodb";
 
 export const Waitlist = {
   input: {
@@ -22,12 +23,18 @@ export const Seats = {
 };
 
 export type Waitlist = z.infer<typeof Waitlist.input.add>;
-
+export type WaitlistRemove = {
+  partyName: string;
+  size: number;
+  partyId: ObjectId;
+};
+export const id = z.object({
+  id: z.instanceof(ObjectId),
+});
 export interface Party {
   id: string;
   partyName: string;
   size: number;
-  timestamp: number;
 }
 
 export type QueueEvents = "enqueued" | "dequeued";

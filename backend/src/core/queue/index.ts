@@ -73,9 +73,15 @@ export const jobs = {
 };
 
 export const workers = {
-  service: new Worker(Queues.Service, async (job): Promise<string> => {
-    return `${job.id} has completed their service.`;
-  }),
+  service: new Worker(
+    Queues.Service,
+    async (job): Promise<string> => {
+      return `${job.id} has completed their service.`;
+    },
+    {
+      connection: REDIS_CONNECTION,
+    }
+  ),
   waitlist: {
     job: new Worker<JobData>(
       Queues.Waitlist,

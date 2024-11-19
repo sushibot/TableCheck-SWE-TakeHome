@@ -1,5 +1,5 @@
-import { MongoClient } from "mongodb";
-import { Waitlist, Seats } from "../schema";
+import { MongoClient, ObjectId, WithId, Document } from "mongodb";
+import { Waitlist, Seats, WaitlistRemove, Party } from "../schema";
 import { DINER, type Diner } from "./diner";
 
 const clientConnect = async () => {
@@ -23,19 +23,15 @@ export const seats = {
     const PARTY_NAME = "Jon Snow";
 
     try {
-      const results = await client
-        .db()
-        .collection("diner")
-        .replaceOne(
-          { partyName: PARTY_NAME },
-          {
-            partyName: PARTY_NAME,
-            size: DINER.MAX_SEATS,
-            timestamp: Date.now(),
-            expiresAt: Date.now() + 5000, // for now
-          },
-          { upsert: true }
-        );
+      const results = await client.db().collection("diner").replaceOne(
+        { partyName: PARTY_NAME },
+        {
+          partyName: PARTY_NAME,
+          size: DINER.MAX_SEATS,
+          timestamp: Date.now(),
+        },
+        { upsert: true }
+      );
       console.log("Successfully initalized the Diner.");
       return results;
     } catch (error) {
@@ -59,14 +55,45 @@ export const seats = {
     }
   },
 };
-
+export const party = {
+  get: async (id: ObjectId): Promise<WithId<Party> | null> => {
+    try {
+      const party = await client
+        .db()
+        .collection<Party>("waitlist")
+        .findOne({ _id: id });
+      return party;
+    } catch (error) {
+      console.log(`Error retrieiving party information: ${error}`);
+      throw new Error();
+    }
+  },
+};
 export const waitlist = {
+  remove: async (party: WaitlistRemove) => {
+    try {
+      const result = await client.db().collection("waitlist").updateOne(
+        {
+          _id: party.partyId,
+        },
+        {
+          removedFromWaitlist: Date.now(),
+        }
+      );
+      return {
+        removed: true,
+      };
+    } catch (error) {
+      console.log(`Error trying to remove party from waitlist: ${error}`);
+      throw new Error();
+    }
+  },
   add: async (waitlist: Waitlist) => {
     try {
       const result = await client.db().collection("waitlist").insertOne({
         partyName: waitlist.partyName,
         size: waitlist.size,
-        timestamp: Date.now(),
+        addedToWaitlist: Date.now(),
       });
 
       // 4.
