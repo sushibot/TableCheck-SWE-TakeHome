@@ -1,14 +1,13 @@
 import { useState, useCallback, useEffect, useRef, FormEvent } from "react";
-
+import { SSE_URL } from "../../config";
 import classes from "./waitlist.module.css";
-
+import { setLocalStorage } from "../../utils";
 import { client, WaitlistInput } from "../../utils/trpc";
 import { Dropdown } from "../dropdown/dropdown";
 
 export function Waitlist() {
   const formElement = useRef<HTMLFormElement | null>(null);
-  const waitlistMutation = client.waitlist.add.useMutation();
-  const brainMutation = client.brain.useMutation();
+  const waitlistMutation = client.addToWaitlist.useMutation();
 
   const [options] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const [partySize, setPartySize] = useState<number | null>(null);
@@ -18,15 +17,14 @@ export function Waitlist() {
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
   const setupEventSource = useCallback(() => {
-    const events = new EventSource(
-      `${import.meta.env.VITE_API_URL}/waitlist-queue`
-    );
+    const events = new EventSource(SSE_URL);
+
     events.addEventListener("open", (event) => {
       console.log("Connected to SSE!");
-      console.log(event);
       setIsConnected(true);
       setRetryCount(0);
     });
+
     events.onopen = () => {
       console.log("Connected to SSE");
       setIsConnected(true);
@@ -35,7 +33,7 @@ export function Waitlist() {
 
     events.onmessage = (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data);
+        const data = event.data;
         console.log("Received SSE data:", data);
 
         // if (data.type === "Initial State") {
@@ -126,9 +124,7 @@ export function Waitlist() {
     setPartySize(option);
   };
 
-  const handleCheckIn = () => {
-    // const partyGetQuery = client.party.get.useQuery();
-  };
+  const handleCheckIn = () => {};
   const addToWaitlist = async (event: FormEvent<HTMLFormElement>) => {
     const form: HTMLFormElement = event.currentTarget;
     const data = new FormData(form);
@@ -137,14 +133,16 @@ export function Waitlist() {
     if (partyName && partySize) {
       const options: WaitlistInput = {
         partyName: partyName,
-        size: partySize,
+        partySize,
       };
 
       //send object to backend, onSuccess set success state
       await waitlistMutation.mutate(options, {
         onSuccess: (data) => {
           console.log(data, "\n\n");
-          setIsConnected(true);
+          console.log(`Job ID: ${data.jobId}`);
+          setLocalStorage("confirmationId", data.confirmationId);
+          setLocalStorage("JobId", data.jobId);
           setShouldConnect(true);
           resetForm();
         },
@@ -187,9 +185,9 @@ export function Waitlist() {
             {isConnected ? "Leave Waitlist" : "Waitlist"}
           </button>
         </form>
-        <button type="button" onClick={() => setShouldConnect(false)}>
+        {/* <button type="button" onClick={() => setShouldConnect(false)}>
           Close Connection Test
-        </button>
+        </button> */}
       </div>
     </>
   );
