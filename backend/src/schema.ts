@@ -22,7 +22,12 @@ export const Seats = {
   },
 };
 
-export type Waitlist = z.infer<typeof Waitlist.input.add>;
+export type Waitlist = {
+  id: ObjectId;
+  partyId: ObjectId;
+  jobId: string;
+  addedToWaitlistAt: number;
+};
 export type WaitlistRemove = {
   partyName: string;
   size: number;
@@ -31,10 +36,24 @@ export type WaitlistRemove = {
 export const id = z.object({
   id: z.instanceof(ObjectId),
 });
+export const PartyInput = z.object({
+  partyName: z.string(),
+  size: z.number(),
+});
+
 export interface Party {
-  id: string;
+  jobId?: string;
+  id?: string;
   partyName: string;
   size: number;
+}
+
+export interface InitialRestaurantState extends Party {
+  restaurantId: ObjectId;
+}
+export interface InitialResult {
+  seats: number;
+  restaurantId: ObjectId | undefined;
 }
 
 export type QueueEvents = "enqueued" | "dequeued";
