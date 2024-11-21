@@ -1,25 +1,32 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { client } from "../../utils/trpc";
 import { Waitlist } from "../../components/waitlist/waitlist";
-// import "../../App.css";
+import { setLocalStorage } from "../../utils";
 
 export function Home() {
-  const initalizeMutation = client.seats.initalize.useMutation();
-  const availableQuery = client.seats.available.useQuery();
+  const intializeDinerQuery = client.inializeDiner.useQuery(undefined, {
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+  });
+  const [seats, setSeats] = useState<number>();
 
   useEffect(() => {
-    initalizeMutation.mutate();
+    const fetchInitialDiner = async () => {
+      const res = await intializeDinerQuery;
+      if (res.data) {
+        setSeats(res.data.seats);
+        setLocalStorage("restaurantId", res.data.restaurantId);
+      }
+    };
+    fetchInitialDiner();
   }, []);
   return (
     <>
       <div>
         <div>
           <h2>Seats Available:</h2>
-          {availableQuery.data ? (
-            <p>{JSON.stringify(availableQuery.data)}</p>
-          ) : (
-            <p>No data available</p>
-          )}
+
+          <p>{seats}</p>
         </div>
         <Waitlist />
       </div>
