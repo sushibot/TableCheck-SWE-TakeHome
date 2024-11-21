@@ -1,12 +1,13 @@
-import { Queue, Worker, ConnectionOptions } from "bullmq";
-
+import { Queue, Worker, ConnectionOptions, Job } from "bullmq";
+import { ObjectId } from "mongodb";
+import { Party } from "../../schema";
+import { updateDinerSeats } from "../db";
 const REDIS_CONNECTION: ConnectionOptions = {
   host: process.env.HOST,
   port: process.env.REDIS_PORT,
 };
 
 export interface JobData {
-  size: number;
   timestamp: number;
   partyName: string;
 }
@@ -28,20 +29,21 @@ export const queues = {
 
 export const jobs = {
   service: {
-    add: async (): Promise<string> => {
+    add: async (party: Party): Promise<string> => {
       const PARTY_SIZE = 4; //hardcoded for now
-
+      const delay = party.size * 3000;
       try {
         await queues.service.add(
           Jobs.CompleteService,
           {
-            partyName: "Garbo",
-            size: PARTY_SIZE,
+            confirmationId: party.id,
+            partyName: party.partyName,
+            size: party.size,
             timestamp: Date.now(),
           },
-          { delay: 5000, removeOnComplete: true }
+          { delay: delay, removeOnComplete: true }
         );
-        return "Garbo Party has completed their service!";
+        return `${party.partyName} has been added to the service queue ...`;
       } catch (error) {
         console.log(`Error trying to complete service... ${error}`);
         throw new Error();
@@ -49,19 +51,26 @@ export const jobs = {
     },
   },
   waitlist: {
-    add: async (job: JobData): Promise<string> => {
-      const PARTY_SIZE = 4; //hardcoded for now
+    add: async (
+      party: JobData
+    ): Promise<{
+      addedToWaitlist: boolean;
+      message: string;
+      jobId: string | undefined;
+    }> => {
       try {
-        await queues.waitlist.add(
-          Jobs.CheckIn,
-          {
-            partyName: "Garbo",
-            size: PARTY_SIZE,
-            timestamp: Date.now(),
-          },
-          { removeOnComplete: true }
-        );
-        return "Garbo party added to waitlist"!;
+        const job = await queues.waitlist.add(Jobs.CheckIn, {
+          partyName: party.partyName,
+          timestamp: Date.now(),
+        });
+
+        const results = {
+          jobId: job.id,
+          addedToWaitlist: true,
+          message: `${party.partyName} has been added to the waitlist!`,
+        };
+
+        return results;
       } catch (error) {
         console.log(
           `There was an error adding the party to the waitlist :( ${error}`
@@ -75,22 +84,24 @@ export const jobs = {
 export const workers = {
   service: new Worker(
     Queues.Service,
-    async (job): Promise<string> => {
-      return `${job.id} has completed their service.`;
+    async (job): Promise<any> => {
+      const size = job.data.size;
+      await updateDinerSeats({ seats: size });
     },
     {
       connection: REDIS_CONNECTION,
     }
   ),
-  waitlist: {
-    job: new Worker<JobData>(
-      Queues.Waitlist,
-      async (job) => {
-        console.log(`${job.data.partyName} has completed their service.`);
-      },
-      {
-        connection: REDIS_CONNECTION,
-      }
-    ),
-  },
+  waitlist: new Worker(Queues.Waitlist, async (job: Job): Promise<any> => {}, {
+    connection: REDIS_CONNECTION,
+  }),
 };
+
+export const clearAllQueues = () => {
+  queues.waitlist.obliterate();
+  queues.service.obliterate();
+};
+
+process.on("SIGTERM", async () => {
+  clearAllQueues(); // closes connection to MongoDB
+});
