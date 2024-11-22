@@ -21,13 +21,18 @@ export const Seats = {
     available: z.number(),
   },
 };
-
+export enum SSE_DATA_EVENTS {
+  CheckIn = "Check In",
+}
 export type Waitlist = {
   id: ObjectId;
   partyId: ObjectId;
   jobId: string;
   addedToWaitlistAt: number;
 };
+export interface NextPartyInWaitlist extends Party {
+  confirmationId: ObjectId;
+}
 export type WaitlistRemove = {
   partyName: string;
   size: number;

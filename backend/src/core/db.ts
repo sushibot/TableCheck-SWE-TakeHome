@@ -1,5 +1,10 @@
 import { MongoClient, ObjectId, WithId } from "mongodb";
-import { Waitlist, Party, InitialRestaurantState } from "../schema";
+import {
+  Waitlist,
+  Party,
+  InitialRestaurantState,
+  NextPartyInWaitlist,
+} from "../schema";
 import { DINER, type Diner } from "./diner";
 
 const clientConnect = async () => {
@@ -93,13 +98,13 @@ export const createInitialDiner =
 export const getParty = async ({
   id,
 }: {
-  id: ObjectId;
+  id: string;
 }): Promise<WithId<Party> | null> => {
   try {
     const party = await client
       .db()
       .collection<Party>("party")
-      .findOne({ _id: id });
+      .findOne({ _id: new ObjectId(id) });
     return party;
   } catch (error) {
     console.log(`Error retrieiving party information: ${error}`);
@@ -108,9 +113,10 @@ export const getParty = async ({
 };
 
 export const getNextPartyInWaitlist =
-  async (): Promise<WithId<Party> | null> => {
+  async (): Promise<WithId<NextPartyInWaitlist> | null> => {
     const session = client.startSession();
     try {
+      let results = null;
       const nextPartyInWaitlist = await client
         .db()
         .collection<Waitlist>("waitlist")
@@ -123,8 +129,16 @@ export const getNextPartyInWaitlist =
         },
         { session }
       );
-
-      return party;
+      if (party) {
+        results = {
+          partyName: party?.partyName,
+          size: party?.size,
+          jobId: party?.jobId,
+          _id: party?._id,
+          confirmationId: nextPartyInWaitlist[0]._id,
+        };
+      }
+      return results;
     } catch (error) {
       session.abortTransaction();
       console.log(`Error finding next party in waitlist: ${error}`);
@@ -135,7 +149,7 @@ export const getNextPartyInWaitlist =
   };
 export const storePartyInWaitlist = async (
   newParty: Party
-): Promise<{ id: ObjectId }> => {
+): Promise<{ waitlistedId: string; partyId: string }> => {
   const session = client.startSession();
 
   try {
@@ -159,10 +173,10 @@ export const storePartyInWaitlist = async (
         { session }
       );
 
-    // 4.
-    // return estimated wait time, confirmation ID, timestamp of joining, waitlist position number
-    // maybe also include: total number of people ahead, party details, status,
-    return { id: insertIntoWaitlist.insertedId };
+    return {
+      waitlistedId: insertIntoWaitlist.insertedId.toString(),
+      partyId: createdParty.insertedId.toString(),
+    };
   } catch (error) {
     console.log(`Error adding party to waitlist: ${error}`);
     session.abortTransaction();
@@ -173,5 +187,6 @@ export const storePartyInWaitlist = async (
 };
 
 process.on("SIGTERM", async () => {
+  await updateDinerSeats({ seats: 0 });
   await client.close(); // closes connection to MongoDB
 });

@@ -1,16 +1,17 @@
 import express from "express";
-import { EventEmitter } from "events";
+
 import cors from "cors";
 import bodyParser from "body-parser";
-import { jobs, workers, queues, clearAllQueues } from "./core/queue/index";
-import { getAvailableSeats, getNextPartyInWaitlist } from "./core/db";
+import { OutgoingHttpHeaders } from "http2";
 import * as trpcExpress from "@trpc/server/adapters/express";
+
+import { SSE_DATA_EVENTS } from "./schema";
+import { workers, queues, clearAllQueues } from "./core/queue/index";
+import { getAvailableSeats, getNextPartyInWaitlist } from "./core/db";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/trpc";
-import { OutgoingHttpHeaders } from "http2";
 
 const app = express();
-const eventEmitter = new EventEmitter();
 
 app.use(cors(), bodyParser.json());
 const SSE_HEADERS: OutgoingHttpHeaders = {
@@ -23,15 +24,14 @@ const SSE_HEADERS: OutgoingHttpHeaders = {
 
 app.get("/waitlist", async (req, res) => {
   res.writeHead(200, SSE_HEADERS);
-  const sendSSE = (eventType: string, data: any) => {
+  const sendEvent = (data: { message: string; type: string; id?: string }) => {
     if (!res.writableEnded) {
-      res.write(`data: ${eventType}\n`);
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     }
   };
 
   try {
-    sendSSE("initial", { message: "Hello World!" });
+    sendEvent({ message: "Hello World!", type: "INITIAL" });
 
     const serviceQueue = await queues.service;
     const waitlistQueue = await queues.waitlist;
@@ -48,14 +48,16 @@ app.get("/waitlist", async (req, res) => {
       const nextParty = await getNextPartyInWaitlist();
       if (nextParty && waitlstLength <= 0) {
         if (nextParty?.size <= seats) {
-          sendSSE("Check In", {
+          sendEvent({
             message: `Your party is ready to be checked in!`,
+            type: SSE_DATA_EVENTS.CheckIn,
+            id: nextParty.confirmationId.toString(),
           });
         }
       }
     });
     req.on("close", () => {
-      sendSSE("close", { message: "Goodbye bro" });
+      sendEvent({ message: "Goodbye bro", type: "DISCONNECT" });
       clearAllQueues();
       if (!res.writableEnded) {
         res.end();
@@ -64,7 +66,7 @@ app.get("/waitlist", async (req, res) => {
 
     const heartbeat = setInterval(async () => {
       console.log(`Current Service Queue Count: ${await serviceQueue.count()}`);
-      sendSSE("heartbeat", { timestamp: new Date().toISOString() });
+      sendEvent({ message: new Date().toISOString(), type: "HEARTBEAT" });
     }, 2000); // Send heartbeat every 30 seconds
 
     req.on("close", () => {
@@ -72,9 +74,9 @@ app.get("/waitlist", async (req, res) => {
     });
   } catch (error) {
     if (!res.writableEnded) {
-      sendSSE("error", {
+      sendEvent({
         message: "Error setting up SSE connection",
-        error: "BROKE BOY",
+        type: "ERROR",
       });
       res.end();
     }

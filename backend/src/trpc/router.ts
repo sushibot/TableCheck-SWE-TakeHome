@@ -17,18 +17,39 @@ export const appRouter = router({
   checkIn: publicProcedure
     .input(
       z.object({
-        id: z.instanceof(ObjectId),
+        id: z.string(),
+        jobId: z.string(),
       })
     )
-    .mutation(async (options) => {
-      const { id } = options.input;
-      const party = await getParty({ id });
-      if (party) {
-        const { partyName, size } = party;
-        await updateDinerSeats({ seats: size });
-        await jobs.service.add({ partyName, size });
+    .output(
+      z.object({
+        success: z.boolean(),
+        message: z.string(),
+      })
+    )
+    .mutation(
+      async (options): Promise<{ message: string; success: boolean }> => {
+        const { id, jobId } = options.input;
+        console.log(options.input);
+        const party = await getParty({ id });
+
+        if (party) {
+          await queues.waitlist.remove(jobId);
+          const { partyName, size } = party;
+          await updateDinerSeats({ seats: size });
+          await jobs.service.add({ partyName, size });
+          return {
+            message:
+              "Your party successfully checked-in! Please enjoy the service :)",
+            success: true,
+          };
+        }
+        return {
+          message: "There was an error checking you in, please hold :(",
+          success: false,
+        };
       }
-    }),
+    ),
   inializeDiner: publicProcedure
     .output(
       z.object({
@@ -43,7 +64,6 @@ export const appRouter = router({
         restaurantId: undefined,
         seats: availableSeats ?? 0,
       };
-      console.log(`AVAILABLE SEATS: ${availableSeats}\n\n\n\n\n`);
 
       if (availableSeats === 0) {
         // creates diner
@@ -74,7 +94,8 @@ export const appRouter = router({
     )
     .output(
       z.object({
-        confirmationId: z.instanceof(ObjectId),
+        partyId: z.string(),
+        confirmationId: z.string(),
         addedToWaitlist: z.boolean(),
         message: z.string(),
         success: z.boolean(),
@@ -88,7 +109,7 @@ export const appRouter = router({
           partyName: partyName,
           timestamp: Date.now(),
         });
-        const { id } = await storePartyInWaitlist({
+        const { partyId, waitlistedId } = await storePartyInWaitlist({
           jobId,
           partyName,
           size: partySize,
@@ -97,7 +118,8 @@ export const appRouter = router({
           jobId,
           addedToWaitlist,
           message,
-          confirmationId: id,
+          confirmationId: waitlistedId,
+          partyId,
           success: true,
         };
         return results;

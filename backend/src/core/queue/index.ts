@@ -97,7 +97,9 @@ export const workers = {
   }),
 };
 
-export const clearAllQueues = () => {
+export const clearAllQueues = async () => {
+  queues.waitlist.pause();
+  queues.service.pause();
   queues.waitlist.obliterate();
   queues.service.obliterate();
 };
